@@ -39,7 +39,7 @@
 </head>
 <body>
 <div class="score">Score: 0</div>
-<div class="game-over">Game Over! Press R to Restart</div>
+<div class="game-over">®</div>
 <canvas id="gameCanvas"></canvas>
 
 <script>
@@ -141,8 +141,13 @@
 
     // 죽는 조건 체크
     function checkDeath() {
-        // 공이 화면의 왼쪽, 오른쪽, 또는 아래쪽으로 나가면 게임 오버
-        if (ball.x - ball.radius < 0 || ball.x + ball.radius > canvas.width || ball.y + ball.radius > canvas.height) {
+        // 공이 화면의 왼쪽, 오른쪽, 아래쪽 또는 위쪽 경계를 벗어나면 게임 오버
+        if (
+            ball.x - ball.radius < 0 || 
+            ball.x + ball.radius > canvas.width || 
+            ball.y - ball.radius < 0 || 
+            ball.y + ball.radius > canvas.height
+        ) {
             gameOver();
         }
     }
