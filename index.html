@@ -141,7 +141,8 @@
 
     // 죽는 조건 체크
     function checkDeath() {
-        if (ball.y + ball.radius > canvas.height) {
+        // 공이 화면의 왼쪽, 오른쪽, 또는 아래쪽으로 나가면 게임 오버
+        if (ball.x - ball.radius < 0 || ball.x + ball.radius > canvas.width || ball.y + ball.radius > canvas.height) {
             gameOver();
         }
     }
