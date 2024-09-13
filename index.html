@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>핑퐁 시밤쾅</title>
+    <title>목표물 맞추기 핑퐁 게임</title>
     <style>
         body {
             margin: 0;
@@ -15,9 +15,19 @@
             display: block;
             background-color: #1b1b1b;
         }
+
+        .score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 24px;
+            font-family: Arial, sans-serif;
+        }
     </style>
 </head>
 <body>
+<div class="score">Score: 0</div>
 <canvas id="gameCanvas"></canvas>
 
 <script>
@@ -27,7 +37,10 @@
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    // 플레이어와 공 설정
+    let score = 0;
+    const scoreDisplay = document.querySelector('.score');
+
+    // 플레이어 설정
     const player = {
         x: canvas.width / 2,
         y: canvas.height - 30,
@@ -37,6 +50,7 @@
         speed: 5
     };
 
+    // 공 설정
     const ball = {
         x: canvas.width / 2,
         y: canvas.height / 2,
@@ -47,24 +61,47 @@
         isFired: false
     };
 
+    // 타겟 설정
+    let target = {
+        x: Math.random() * (canvas.width - 50),
+        y: Math.random() * (canvas.height / 2),
+        width: 50,
+        height: 50,
+        color: "green",
+        speedX: 2
+    };
+
     // 방향키 상태
     const keys = {
-        up: false,
-        down: false,
         left: false,
-        right: false,
-        space: false
+        right: false
     };
 
     // 벽 튕김 처리
     function bounceBall() {
-        // 좌우 벽 충돌
         if (ball.x - ball.radius < 0 || ball.x + ball.radius > canvas.width) {
             ball.speedX *= -1;
         }
-        // 상하 벽 충돌
-        if (ball.y - ball.radius < 0 || ball.y + ball.radius > canvas.height) {
+        if (ball.y - ball.radius < 0) {
             ball.speedY *= -1;
+        }
+        if (ball.y + ball.radius > canvas.height) {
+            resetBall();
+        }
+    }
+
+    // 타겟 충돌 체크
+    function checkCollision() {
+        if (
+            ball.x > target.x &&
+            ball.x < target.x + target.width &&
+            ball.y > target.y &&
+            ball.y < target.y + target.height
+        ) {
+            score += 10;
+            scoreDisplay.textContent = `Score: ${score}`;
+            resetTarget();
+            resetBall();
         }
     }
 
@@ -91,6 +128,11 @@
         ctx.closePath();
     }
 
+    function drawTarget() {
+        ctx.fillStyle = target.color;
+        ctx.fillRect(target.x, target.y, target.width, target.height);
+    }
+
     // 플레이어 이동
     function updatePlayer() {
         if (keys.left && player.x > player.width / 2) {
@@ -107,10 +149,33 @@
             ball.x += ball.speedX;
             ball.y += ball.speedY;
             bounceBall();
+            checkCollision();
         } else {
             ball.x = player.x;
             ball.y = player.y - player.height / 2 - ball.radius;
         }
+    }
+
+    // 타겟 이동
+    function updateTarget() {
+        target.x += target.speedX;
+        if (target.x + target.width > canvas.width || target.x < 0) {
+            target.speedX *= -1;
+        }
+    }
+
+    // 타겟 초기화
+    function resetTarget() {
+        target.x = Math.random() * (canvas.width - 50);
+        target.y = Math.random() * (canvas.height / 2);
+        target.speedX += 0.2; // 난이도 상승
+    }
+
+    // 공 초기화
+    function resetBall() {
+        ball.isFired = false;
+        ball.speedX = 0;
+        ball.speedY = 0;
     }
 
     // 렌더링 함수
@@ -118,12 +183,14 @@
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         drawPlayer();
         drawBall();
+        drawTarget();
     }
 
     // 게임 루프
     function gameLoop() {
         updatePlayer();
         updateBall();
+        updateTarget();
         render();
         requestAnimationFrame(gameLoop);
     }
