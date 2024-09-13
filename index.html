@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>시밤쾅</title>
+    <title>핑퐁 시밤쾅</title>
     <style>
         body {
             margin: 0;
@@ -24,133 +24,121 @@
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
 
-    // 캔버스 크기 설정
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    // 플레이어 객체d
+    // 플레이어와 공 설정
     const player = {
-        x: canvas.width / 2 - 25,
-        y: canvas.height - 50,
-        width: 50,
+        x: canvas.width / 2,
+        y: canvas.height - 30,
+        width: 10,
         height: 50,
         color: "white",
         speed: 5
     };
 
-    // 방향키 상태
-    const keys = {
-        left: false,
-        right: false,
-        up: false,
-        down: false
+    const ball = {
+        x: canvas.width / 2,
+        y: canvas.height / 2,
+        radius: 10,
+        color: "red",
+        speedX: 0,
+        speedY: 0,
+        isFired: false
     };
 
-    // 장애물 리스트
-    let obstacles = [];
+    // 방향키 상태
+    const keys = {
+        up: false,
+        down: false,
+        left: false,
+        right: false,
+        space: false
+    };
 
-    // 장애물 생성
-    function createObstacle() {
-        const size = Math.random() * 50 + 20;
-        const x = Math.random() * (canvas.width - size);
-        obstacles.push({
-            x: x,
-            y: -size,
-            width: size,
-            height: size,
-            speed: 3 + Math.random() * 2,
-            color: "hsl(" + Math.random() * 360 + ", 100%, 50%)"
-        });
+    // 벽 튕김 처리
+    function bounceBall() {
+        // 좌우 벽 충돌
+        if (ball.x - ball.radius < 0 || ball.x + ball.radius > canvas.width) {
+            ball.speedX *= -1;
+        }
+        // 상하 벽 충돌
+        if (ball.y - ball.radius < 0 || ball.y + ball.radius > canvas.height) {
+            ball.speedY *= -1;
+        }
     }
 
-    // 장애물 그리기
-    function drawObstacle(obstacle) {
-        ctx.fillStyle = obstacle.color;
-        ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+    // 공 발사
+    function fireBall() {
+        if (!ball.isFired) {
+            ball.speedX = (Math.random() - 0.5) * 8;
+            ball.speedY = -5;
+            ball.isFired = true;
+        }
     }
 
-    // 플레이어 그리기
+    // 플레이어와 공 그리기
     function drawPlayer() {
         ctx.fillStyle = player.color;
-        ctx.fillRect(player.x, player.y, player.width, player.height);
+        ctx.fillRect(player.x - player.width / 2, player.y - player.height / 2, player.width, player.height);
     }
 
-    // 업데이트 함수
-    function update() {
-        // 플레이어 이동
-        if (keys.left && player.x > 0) {
+    function drawBall() {
+        ctx.fillStyle = ball.color;
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.closePath();
+    }
+
+    // 플레이어 이동
+    function updatePlayer() {
+        if (keys.left && player.x > player.width / 2) {
             player.x -= player.speed;
         }
-        if (keys.right && player.x + player.width < canvas.width) {
+        if (keys.right && player.x < canvas.width - player.width / 2) {
             player.x += player.speed;
         }
-        if (keys.up && player.y > 0) {
-            player.y -= player.speed;
-        }
-        if (keys.down && player.y + player.height < canvas.height) {
-            player.y += player.speed;
-        }
+    }
 
-        // 장애물 이동
-        for (let i = 0; i < obstacles.length; i++) {
-            obstacles[i].y += obstacles[i].speed;
-
-            // 장애물이 화면 밖으로 나가면 제거
-            if (obstacles[i].y > canvas.height) {
-                obstacles.splice(i, 1);
-                i--;
-            }
+    // 공 이동
+    function updateBall() {
+        if (ball.isFired) {
+            ball.x += ball.speedX;
+            ball.y += ball.speedY;
+            bounceBall();
+        } else {
+            ball.x = player.x;
+            ball.y = player.y - player.height / 2 - ball.radius;
         }
-
-        // 충돌 체크
-        obstacles.forEach(obstacle => {
-            if (
-                player.x < obstacle.x + obstacle.width &&
-                player.x + player.width > obstacle.x &&
-                player.y < obstacle.y + obstacle.height &&
-                player.y + player.height > obstacle.y
-            ) {
-                alert("게임 오버!");
-                document.location.reload();
-            }
-        });
     }
 
     // 렌더링 함수
     function render() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-
         drawPlayer();
-
-        for (let i = 0; i < obstacles.length; i++) {
-            drawObstacle(obstacles[i]);
-        }
+        drawBall();
     }
 
     // 게임 루프
     function gameLoop() {
-        update();
+        updatePlayer();
+        updateBall();
         render();
         requestAnimationFrame(gameLoop);
     }
-
-    // 장애물 생성 주기적으로
-    setInterval(createObstacle, 1000);
 
     // 키다운 이벤트
     window.addEventListener("keydown", function (e) {
         if (e.key === "ArrowLeft") keys.left = true;
         if (e.key === "ArrowRight") keys.right = true;
-        if (e.key === "ArrowUp") keys.up = true;
-        if (e.key === "ArrowDown") keys.down = true;
+        if (e.key === " ") fireBall();
     });
 
     // 키업 이벤트
     window.addEventListener("keyup", function (e) {
         if (e.key === "ArrowLeft") keys.left = false;
         if (e.key === "ArrowRight") keys.right = false;
-        if (e.key === "ArrowUp") keys.up = false;
-        if (e.key === "ArrowDown") keys.down = false;
     });
 
     // 게임 시작
